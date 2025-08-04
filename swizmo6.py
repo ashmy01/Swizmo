@@ -6,7 +6,7 @@ import time
 
 class TouchlessControl:
     def __init__(self):
-        # Initialize MediaPipe Hands
+        
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(static_image_mode=False,
             max_num_hands=1,
@@ -15,7 +15,7 @@ class TouchlessControl:
         )
         self.mp_draw = mp.solutions.drawing_utils
 
-        # Control parameters
+        
         self.active = True
         self.prev_hand_pos = None
         self.prev_hand_x = None
@@ -24,12 +24,12 @@ class TouchlessControl:
         self.zoom_active = False
         self.initial_pinch_dist = None
         
-        # Swipe parameters
+        
         self.swipe_threshold = 50
         self.swipe_active = False
         self.swipe_cooldown = 0
 
-        # Screen info
+        
         self.screen_w, self.screen_h = pyautogui.size()
 
     def track_hand(self, image):
@@ -40,26 +40,26 @@ class TouchlessControl:
             hand_landmarks = results.multi_hand_landmarks[0]
             self.mp_draw.draw_landmarks(image, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
 
-            # Get key points
+            
             wrist = hand_landmarks.landmark[0]
             thumb_tip = hand_landmarks.landmark[4]
             index_tip = hand_landmarks.landmark[8]
             
-            # For swipe detection
+        
             h, w, c = image.shape
             wrist_x, wrist_y = int(wrist.x * w), int(wrist.y * h)
             index_x, index_y = int(index_tip.x * w), int(index_tip.y * h)
             hand_x = (wrist_x + index_x) // 2
             hand_y = (wrist_y + index_y) // 2
             
-            # Calculate pinch distance (normalized 0-1)
+        
             pinch_dist = np.sqrt(
                 (thumb_tip.x - index_tip.x)**2 + 
                 (thumb_tip.y - index_tip.y)**2
             )
 
-            # Check for zoom gesture
-            if pinch_dist < 0.15:  # Pinch threshold
+            
+            if pinch_dist < 0.15:  
                 if not self.zoom_active:
                     self.initial_pinch_dist = pinch_dist
                     self.zoom_active = True
@@ -87,15 +87,15 @@ class TouchlessControl:
         dx = current_pos.x - self.prev_hand_pos.x
         dy = current_pos.y - self.prev_hand_pos.y
 
-        # Horizontal swipe (more sensitive)
+        
         if abs(dx) > 0.012:
             move_x = -dx * self.screen_w * self.scroll_sensitivity
             pyautogui.hscroll(int(move_x/10))
 
-        # Vertical scroll
+        
         if abs(dy) > 0.01:
             move_y = dy * self.screen_h * self.scroll_sensitivity
-            pyautogui.scroll(int(-move_y))  # Inverted for natural feel
+            pyautogui.scroll(int(-move_y))  
 
         self.prev_hand_pos = current_pos
 
@@ -106,11 +106,11 @@ class TouchlessControl:
         zoom_change = (self.initial_pinch_dist - current_dist) * self.zoom_sensitivity
 
         if abs(zoom_change) > 0.5:
-            if zoom_change > 0:  # Fingers moving apart (zoom in)
+            if zoom_change > 0:  
                 pyautogui.keyDown('ctrl')
                 pyautogui.press('+')
                 pyautogui.keyUp('ctrl')
-            else:  # Fingers moving together (zoom out)
+            else:  
                 pyautogui.keyDown('ctrl')
                 pyautogui.press('-')
                 pyautogui.keyUp('ctrl')
@@ -160,9 +160,9 @@ def main():
         frame = cv2.flip(frame, 1)
         frame, wrist, thumb, index, hand_x, hand_y = controller.track_hand(frame)
 
-        # Display visual feedback
+        
         if controller.zoom_active:
-            color = (0, 255, 255)  # Yellow for zoom
+            color = (0, 255, 255)  
             cv2.putText(frame, "ZOOM MODE", (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
             if thumb and index:
